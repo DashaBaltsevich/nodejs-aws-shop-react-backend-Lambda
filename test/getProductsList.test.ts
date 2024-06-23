@@ -1,4 +1,4 @@
-import { products } from "../product_service/lambda_func/mocks"
+import { products } from "../product_service/mocks"
 import { getProductsListHandler } from "../product_service/lambda_func/products_list"
 
 describe("getProductsList ", () => {
@@ -7,8 +7,8 @@ describe("getProductsList ", () => {
 		const response = await getProductsListHandler(event)
 		expect(response.statusCode).toBe(200)
 		const responseProducts = JSON.parse(response.body)
-		expect(responseProducts).toEqual(products)
+		expect(responseProducts[0]).toEqual({ ...products[0], count: 3 })
 		expect(responseProducts[0].title).toBe("ProductOne")
-		expect(responseProducts[1].title).toBe("ProductTitle")
+		expect(responseProducts[1].title).toBe("Product000")
 	})
 })

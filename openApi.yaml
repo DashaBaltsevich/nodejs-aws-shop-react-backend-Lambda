@@ -1,86 +1,124 @@
 openapi: 3.0.0
 info:
-  title: Product Service API
-  description: API for managing products
-  version: 1.0.0
+    title: Product Service API
+    description: API for managing products
+    version: 1.0.0
 servers:
-  - url: https://fdnp1lb1hd.execute-api.eu-central-1.amazonaws.com/prod
-    description: Dev server
+    - url: https://fdnp1lb1hd.execute-api.eu-central-1.amazonaws.com/prod
+      description: Dev server
 
 tags:
-  - name: products
-    description: Everything about your products
+    - name: products
+      description: Everything about your products
 
 paths:
-  /products:
-    get:
-      tags:
-        - products
-      summary: Get all products
-      operationId: getProducts
-      responses:
-        '200':
-          description: A list of products
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Products'
-        '404':
-          description: Products not found
+    /products:
+        get:
+            tags:
+                - products
+            summary: Get all products
+            operationId: getProducts
+            responses:
+                "200":
+                    description: A list of products
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Products"
+                "404":
+                    description: Products not found
 
-        '500':
-          description: Internal Server Error
+                "500":
+                    description: Internal Server Error
+        post:
+            tags:
+                - products
+            summary: Create the product
+            operationId: createProduct
+            requestBody:
+                description: Product created successfully
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/CreateProduct"
+            responses:
+                "200":
+                    description: Product created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Product"
+                "400":
+                    description: Invalid product data
 
+                "500":
+                    description: Failed to create product
 
-  /products/{id}:
-    get:
-      tags:
-        - products
-      summary: Get a product by ID
-      operationId: getProductById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: The product ID
-          schema:
-            type: string
-      responses:
-        '200':
-          description: The requested product
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Product'
-        '404':
-          description: Product not found
+    /products/{id}:
+        get:
+            tags:
+                - products
+            summary: Get a product by ID
+            operationId: getProductById
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: The product ID
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: The requested product
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Product"
+                "404":
+                    description: Product not found
 
-        '500':
-          description: Internal Server Error
-
+                "500":
+                    description: Internal Server Error
 
 components:
-  schemas:
-    Product:
-      type: object
-      properties:
-          id:
-            type: string
-            example: '7567ec4b-b10c-48c5-9345-fc73c48a80aa'
-          description:
-            type: string
-            example: 'Short Product Description1'
-          price:
-            type: number
-            example: 24
-          title:
-            type: string
-            example: 'ProductOne'
-            
-    Products:
-      type: array
-      items:
-        $ref: '#/components/schemas/Product'
-            
+    schemas:
+        Product:
+            type: object
+            properties:
+                id:
+                    type: string
+                    example: "7567ec4b-b10c-48c5-9345-fc73c48a80aa"
+                description:
+                    type: string
+                    example: "Short Product Description1"
+                price:
+                    type: number
+                    example: 24
+                title:
+                    type: string
+                    example: "ProductOne"
+                count:
+                    type: number
+                    example: 3
 
+        Products:
+            type: array
+            items:
+                $ref: "#/components/schemas/Product"
 
+        CreateProduct:
+            type: object
+            properties:
+                description:
+                    type: string
+                    example: "Short Product Description1"
+                price:
+                    type: number
+                    example: 24
+                title:
+                    type: string
+                    example: "Product002"
+                count:
+                    type: number
+                    example: 3

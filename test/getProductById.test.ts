@@ -1,5 +1,5 @@
 import { getProductByIdHandler } from "../product_service/lambda_func/product_by_id"
-import { products } from "../product_service/lambda_func/mocks"
+import { products } from "../product_service/mocks"
 
 describe("getProductById", () => {
 	it("should return the product with the given ID", async () => {
@@ -9,7 +9,7 @@ describe("getProductById", () => {
 		const response = await getProductByIdHandler(event)
 		expect(response.statusCode).toBe(200)
 		const responseProduct = JSON.parse(response.body)
-		expect(responseProduct).toEqual(products[0])
+		expect(responseProduct).toEqual({ ...products[0], count: 3 })
 		expect(responseProduct.title).toBe("ProductOne")
 	})
 
