@@ -3,6 +3,7 @@ import { Construct } from "constructs"
 import { aws_apigateway as apigateway } from "aws-cdk-lib"
 import { GetProducts } from "../product_service/get_products"
 import { GetProductById } from "../product_service/get_product_by_id"
+import { PostProduct } from "../product_service/post_product"
 
 export class ProductServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
@@ -14,9 +15,12 @@ export class ProductServiceStack extends Stack {
 		// Instantiate the GetProductById stack
 		const getProductByIdStack = new GetProductById(this, "GetProductByIdStack")
 
+		const postProductStack = new PostProduct(this, "PostProductStack")
+
 		// Access the exported Lambda functions
 		const getProductsListHandler = getProductsStack.getProductsListHandler
 		const getProductByIdHandler = getProductByIdStack.getProductByIdHandler
+		const postProductHandler = postProductStack.postProductHandler
 
 		// Define the API Gateway resource
 		const api = new apigateway.RestApi(this, "ProductServiceApi", {
@@ -40,6 +44,11 @@ export class ProductServiceStack extends Stack {
 		productByIdResource.addMethod(
 			"GET",
 			new apigateway.LambdaIntegration(getProductByIdHandler)
+		)
+
+		productsResource.addMethod(
+			"POST",
+			new apigateway.LambdaIntegration(postProductHandler)
 		)
 	}
 }

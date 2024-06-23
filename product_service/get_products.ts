@@ -1,4 +1,5 @@
 import { aws_lambda as _lambda, Stack, StackProps } from "aws-cdk-lib"
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import { Construct } from "constructs"
 
 export class GetProducts extends Stack {
@@ -6,17 +7,32 @@ export class GetProducts extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
 		super(scope, id, props)
 
+		const existingProductsTable = dynamodb.Table.fromTableName(
+			this,
+			"ExistingProductsTable",
+			"Products"
+		)
+		const existingStocksTable = dynamodb.Table.fromTableName(
+			this,
+			"ExistingStocksTable",
+			"Stocks"
+		)
+
 		this.getProductsListHandler = new _lambda.Function(
 			this,
 			"GetProductsListHandler",
 			{
-				runtime: _lambda.Runtime.NODEJS_20_X, // Choose any supported Node.js runtime
-				code: _lambda.Code.fromAsset("product_service/lambda_func/"), // Points to the lambda directory
-				handler: "products_list.getProductsListHandler", // Points to the 'hello' file in the lambda directory
+				runtime: _lambda.Runtime.NODEJS_20_X,
+				code: _lambda.Code.fromAsset("product_service/lambda_func/"),
+				handler: "products_list.getProductsListHandler",
 				environment: {
-					MOCKS_PATH: "./lambda_func/mocks",
+					PRODUCTS_TABLE: existingProductsTable.tableName,
+					STOCKS_TABLE: existingStocksTable.tableName,
 				},
 			}
 		)
+
+		existingProductsTable.grantReadData(this.getProductsListHandler)
+		existingStocksTable.grantReadData(this.getProductsListHandler)
 	}
 }
