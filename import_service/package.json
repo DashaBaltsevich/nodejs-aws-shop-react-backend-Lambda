@@ -1,15 +1,14 @@
 {
-	"name": "nodejs-aws-shop-react-backend-lambda",
+	"name": "import_service",
 	"version": "0.1.0",
 	"bin": {
-		"nodejs-aws-shop-react-backend-lambda": "bin/nodejs-aws-shop-react-backend-lambda.js"
+		"import_service": "bin/import_service.js"
 	},
 	"scripts": {
 		"build": "tsc",
 		"watch": "tsc -w",
 		"test": "jest",
-		"cdk": "cdk deploy",
-		"db:fill": "bash populateDynamoDB.sh"
+		"cdk": "cdk deploy"
 	},
 	"devDependencies": {
 		"@types/jest": "^29.5.12",
@@ -21,10 +20,12 @@
 		"typescript": "~5.4.5"
 	},
 	"dependencies": {
-		"@aws-sdk/client-dynamodb": "^3.600.0",
+		"@aws-sdk/client-s3": "^3.606.0",
+		"@aws-sdk/s3-request-presigner": "^3.606.0",
 		"aws-cdk-lib": "2.145.0",
+		"aws-sdk": "^2.1647.0",
 		"constructs": "^10.0.0",
-		"crypto-ts": "^1.0.2",
+		"csv-parser": "^3.0.0",
 		"source-map-support": "^0.5.21"
 	}
 }

@@ -1,9 +1,9 @@
 import { Stack, StackProps } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { aws_apigateway as apigateway } from "aws-cdk-lib"
-import { GetProducts } from "../product_service/get_products"
-import { GetProductById } from "../product_service/get_product_by_id"
-import { PostProduct } from "../product_service/post_product"
+import { GetProducts } from "../get_products"
+import { GetProductById } from "../get_product_by_id"
+import { PostProduct } from "../post_product"
 
 export class ProductServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
