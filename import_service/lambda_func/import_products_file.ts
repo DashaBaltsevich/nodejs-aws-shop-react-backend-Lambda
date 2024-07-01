@@ -6,11 +6,10 @@ export const importProductsFileHandler = async (event: any) => {
 	console.log("Incoming importProducts request:", event)
 
 	const headers = {
+		"Content-Type": "text/plain",
+		"Access-Control-Allow-Headers": "Content-Type",
 		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Credentials": true,
-		"Access-Control-Allow-Methods": "POST, GET, PUT, DELETE, OPTIONS",
-		"Access-Control-Allow-Headers": "*",
-		"content-type": "text/csv",
+		"Access-Control-Allow-Methods": "POST,GET,PUT,DELETE,OPTIONS",
 	}
 
 	const fileName = event.queryStringParameters?.name
@@ -30,7 +29,7 @@ export const importProductsFileHandler = async (event: any) => {
 		return {
 			statusCode: 200,
 			headers: headers,
-			body: JSON.stringify({ signedUrl }),
+			body: JSON.stringify(signedUrl),
 		}
 	} catch (error) {
 		console.error("Error generating Signed URL:", error)

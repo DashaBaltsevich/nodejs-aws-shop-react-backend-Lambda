@@ -12,12 +12,11 @@ export const importFileParserHandler = async (event: any) => {
 	console.log("Incoming importFileParser request:", event)
 
 	const headers = {
-		Accept: "text/csv",
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Credentials": true,
 		"Access-Control-Allow-Methods": "POST, GET, PUT, DELETE, OPTIONS",
 		"Access-Control-Allow-Headers": "*",
-		"content-type": "text/csv",
+		ContentType: "text/csv",
 	}
 
 	const record = event.Records[0]
@@ -32,8 +31,9 @@ export const importFileParserHandler = async (event: any) => {
 	}
 
 	try {
-		const message = await importFileParserService(objectKey)
-		return { statusCode: 200, body: message, headers: headers }
+		const parsedData = await importFileParserService(objectKey)
+		console.log("!!!!parsedData:", parsedData)
+		return { statusCode: 200, body: parsedData, headers: headers }
 	} catch (error) {
 		console.error("Error reading CSV from S3:", error)
 		return {
@@ -44,7 +44,7 @@ export const importFileParserHandler = async (event: any) => {
 	}
 }
 
-const importFileParserService = async (key: string) => {
+export const importFileParserService = async (key: string) => {
 	try {
 		console.log(key)
 		const client = new S3Client({})
