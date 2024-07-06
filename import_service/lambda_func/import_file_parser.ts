@@ -1,15 +1,17 @@
-import * as csvParser from "csv-parser"
-import { BUCKET_NAME } from "./constants"
+import csvParser from "csv-parser"
 import {
 	CopyObjectCommand,
 	DeleteObjectCommand,
 	GetObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3"
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"
 import { Readable } from "stream"
+import { BUCKET_NAME } from "./constants"
 
 export const importFileParserHandler = async (event: any) => {
 	console.log("Incoming importFileParser request:", event)
+	console.log("Object key:", JSON.stringify(event.Records[0]))
 
 	const headers = {
 		"Access-Control-Allow-Origin": "*",
@@ -22,6 +24,9 @@ export const importFileParserHandler = async (event: any) => {
 	const record = event.Records[0]
 	const objectKey = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "))
 
+	console.log("Bucket:", BUCKET_NAME)
+	console.log("Object key:", objectKey)
+
 	if (!objectKey.split("/").at(-1)) {
 		return {
 			statusCode: 400,
@@ -31,11 +36,17 @@ export const importFileParserHandler = async (event: any) => {
 	}
 
 	try {
-		const parsedData = await importFileParserService(objectKey)
-		console.log("!!!!parsedData:", parsedData)
-		return { statusCode: 200, body: parsedData, headers: headers }
+		await importFileParserService(objectKey)
+		return {
+			statusCode: 200,
+			body: "CSV file was parsed successfully!",
+			headers: headers,
+		}
 	} catch (error) {
-		console.error("Error reading CSV from S3:", error)
+		console.error(
+			`Error retrieving object ${objectKey} from bucket ${BUCKET_NAME}:`,
+			error
+		)
 		return {
 			statusCode: 500,
 			headers: headers,
@@ -45,65 +56,78 @@ export const importFileParserHandler = async (event: any) => {
 }
 
 export const importFileParserService = async (key: string) => {
-	try {
-		console.log(key)
-		const client = new S3Client({})
+	const client = new S3Client({})
+	const sqsClient = new SQSClient()
 
-		const fileName = key.split("/").at(-1)
+	const fileName = key.split("/").at(-1)
 
-		if (!fileName) {
-			throw new Error("Missing file name")
-		}
-
-		const srcParams = {
-			Bucket: BUCKET_NAME,
-			Key: key,
-			ContentType: "text/csv",
-		}
-
-		const destParams = {
-			...srcParams,
-			Key: `parsed/${fileName}`,
-			CopySource: `${BUCKET_NAME}/${key}`,
-		}
-
-		const getCommand = new GetObjectCommand(srcParams)
-		const copyCommand = new CopyObjectCommand(destParams)
-		const deleteCommand = new DeleteObjectCommand(srcParams)
-
-		const { Body: stream } = await client.send(getCommand)
-
-		if (!stream) {
-			throw new Error("Stream error")
-		}
-
-		return new Promise<string>((resolve, reject) => {
-			;(stream as Readable)
-				.pipe(csvParser())
-				.on("data", (chunk) => {
-					console.log("CSV chunk:", chunk)
-				})
-				.on("end", async () => {
-					const message = "CSV file was parsed successfully!"
-					console.log(message)
-
-					try {
-						await client.send(copyCommand)
-						console.log("The file was copied to parsed folder")
-						await client.send(deleteCommand)
-						console.log("The file was deleted from uploaded folder")
-
-						return resolve(message)
-					} catch (e) {
-						reject(e)
-					}
-				})
-				.on("error", (err: any) => {
-					console.error(err)
-					reject(err)
-				})
-		}).then((msg) => msg)
-	} catch (err: any) {
-		throw new Error(err)
+	if (!fileName) {
+		throw new Error("Missing file name")
 	}
+
+	const srcParams = {
+		Bucket: BUCKET_NAME,
+		Key: key,
+		ContentType: "text/csv",
+	}
+
+	console.log(`S3 source parameters: ${JSON.stringify(srcParams)}`)
+
+	const destParams = {
+		...srcParams,
+		Key: `parsed/${fileName}`,
+		CopySource: `${BUCKET_NAME}/${key}`,
+	}
+
+	console.log(`S3 destination parameters: ${JSON.stringify(destParams)}`)
+
+	const getCommand = new GetObjectCommand(srcParams)
+
+	const { Body: stream } = await client.send(getCommand)
+
+	console.log(`Stream retrieved from S3: ${stream}`)
+
+	if (!stream) {
+		throw new Error("Stream error")
+	}
+
+	return new Promise<string>((resolve, reject) => {
+		;(stream as Readable)
+			.pipe(csvParser())
+			.on("data", async (chunk: any) => {
+				console.log("CSV chunk:", chunk)
+				const messageParams = {
+					QueueUrl: process.env.SQS_URL,
+					MessageBody: JSON.stringify(chunk),
+				}
+				try {
+					console.log("Message params", messageParams)
+					await sqsClient.send(new SendMessageCommand(messageParams))
+					console.log("Sent message to SQS:", chunk)
+				} catch (error) {
+					console.error("Error sending message to SQS:", error)
+					reject(error)
+				}
+			})
+			.on("end", async () => {
+				try {
+					const copyCommand = new CopyObjectCommand(destParams)
+					const deleteCommand = new DeleteObjectCommand(srcParams)
+
+					await client.send(copyCommand)
+					console.log("The file was copied to parsed folder")
+					await client.send(deleteCommand)
+					console.log("The file was deleted from uploaded folder")
+
+					resolve("CSV file was parsed successfully!")
+				} catch (e) {
+					console.error("Error parsing", e)
+					reject(e)
+				}
+			})
+			.on("error", (err: any) => {
+				console.error(err)
+				reject(err)
+			})
+	})
 }

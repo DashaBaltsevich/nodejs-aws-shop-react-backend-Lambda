@@ -1,6 +1,7 @@
 import { aws_lambda as _lambda, Stack, StackProps } from "aws-cdk-lib"
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import { Construct } from "constructs"
+import path = require("path")
 
 export class GetProducts extends Stack {
 	public readonly getProductsListHandler: _lambda.Function
@@ -23,7 +24,7 @@ export class GetProducts extends Stack {
 			"GetProductsListHandler",
 			{
 				runtime: _lambda.Runtime.NODEJS_20_X,
-				code: _lambda.Code.fromAsset("product_service/lambda_func/"),
+				code: _lambda.Code.fromAsset(path.join(__dirname, "lambda_func/")),
 				handler: "products_list.getProductsListHandler",
 				environment: {
 					PRODUCTS_TABLE: existingProductsTable.tableName,

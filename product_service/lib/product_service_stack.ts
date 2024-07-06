@@ -4,6 +4,7 @@ import { aws_apigateway as apigateway } from "aws-cdk-lib"
 import { GetProducts } from "../get_products"
 import { GetProductById } from "../get_product_by_id"
 import { PostProduct } from "../post_product"
+import { CatalogItemsQueue } from "../catalog_items_queue"
 
 export class ProductServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
@@ -16,6 +17,10 @@ export class ProductServiceStack extends Stack {
 		const getProductByIdStack = new GetProductById(this, "GetProductByIdStack")
 
 		const postProductStack = new PostProduct(this, "PostProductStack")
+
+		//catalogBatchProcess
+
+		new CatalogItemsQueue(this, "CatalogItemsQueueStack")
 
 		// Access the exported Lambda functions
 		const getProductsListHandler = getProductsStack.getProductsListHandler
