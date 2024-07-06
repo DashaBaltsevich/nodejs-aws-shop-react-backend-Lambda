@@ -1,6 +1,7 @@
 import { aws_lambda as _lambda, Stack, StackProps } from "aws-cdk-lib"
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import { Construct } from "constructs"
+import path = require("path")
 
 export class PostProduct extends Stack {
 	public readonly postProductHandler: _lambda.Function
@@ -20,7 +21,7 @@ export class PostProduct extends Stack {
 
 		this.postProductHandler = new _lambda.Function(this, "PostProductHandler", {
 			runtime: _lambda.Runtime.NODEJS_20_X,
-			code: _lambda.Code.fromAsset("product_service/lambda_func/"),
+			code: _lambda.Code.fromAsset(path.join(__dirname, "lambda_func/")),
 			handler: "create_product.createProductHandler",
 			environment: {
 				PRODUCTS_TABLE: existingProductsTable.tableName,
