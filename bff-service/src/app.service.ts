@@ -6,11 +6,6 @@ import * as dotenv from 'dotenv';
 import { Request } from 'express';
 dotenv.config();
 
-const env: any = {
-  cart: 'https://ooir0bd08e.execute-api.eu-central-1.amazonaws.com/prod',
-  product: 'https://fmwacq81qd.execute-api.eu-central-1.amazonaws.com/prod',
-};
-
 @Injectable()
 export class AppService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
@@ -22,22 +17,12 @@ export class AppService {
 
     const recipient = req.originalUrl.split('/')[1];
     console.log('recipient', recipient);
-    const recipientURL = env[recipient];
+    const recipientURL = process.env[recipient];
     console.log('recipientURL', recipientURL);
 
     if (recipientURL) {
       const url = req.originalUrl.slice(`/${recipient}`.length);
       console.log('url', url);
-      const axiosConfig = {
-        headers: {
-          authorization: req.headers.authorization
-        },
-        method: req.method,
-        url: `${recipientURL}${url}`,
-        ...(Object.keys(req.body || {}).length > 0 && { data: req.body }),
-      };
-
-      console.log('axiosConfig', axiosConfig);
 
       if (req.originalUrl.includes('products') && req.method === 'GET') {
         const cacheKey = `products:${req.originalUrl}`;
@@ -51,26 +36,59 @@ export class AppService {
         }
       } else console.log('No product cache');
 
-      axios(axiosConfig)
-        .then(function (response) {
-          console.log('response from recipient', response.data);
-          if (req.originalUrl.includes('products') && req.method === 'GET') {
-            const cacheKey = `products:${req.originalUrl}`;
-            this.cacheManager.set(cacheKey, response.data, { ttl: 120 });
-            console.log('Product cache was set');
-          }
-          return response.data;
-        })
-        .catch((err) => {
-          console.log('error', JSON.stringify(err));
-          if (err.response) {
-            const { status, data } = err.response;
+      const axiosConfig = {
+        headers: {
+          authorization: req.headers.authorization,
+        },
+        method: req.method,
+        url: `${recipientURL}${url}`,
+        ...(Object.keys(req.body || {}).length > 0 && { data: req.body }),
+      };
 
-            throw { status, data };
-          } else {
-            throw { status: 500, data: { error: err.message } };
-          }
-        });
+      console.log('axiosConfig', axiosConfig);
+
+      try {
+        const response = await axios(axiosConfig);
+        console.log('response from recipient', response.data);
+        if (req.originalUrl.includes('products') && req.method === 'GET') {
+          const cacheKey = `products:${req.originalUrl}`;
+          this.cacheManager.set(cacheKey, response.data, 120);
+          console.log('Product cache was set');
+        }
+        return response.data;
+      } catch (err) {
+        console.log('error', JSON.stringify(err));
+        if (err.response) {
+          const { status, data } = err.response;
+
+          throw { status, data };
+        } else {
+          throw { status: 500, data: { error: err.message } };
+        }
+      }
+
+      // axios(axiosConfig)
+      //   .then(function (response) {
+      //     console.log('response from recipient', response.data);
+      //     if (req.originalUrl.includes('products') && req.method === 'GET') {
+      //       const cacheKey = `products:${req.originalUrl}`;
+      //       this.cacheManager.set(cacheKey, response.data, { ttl: 120 });
+      //       console.log('Product cache was set');
+      //     }
+      //     return response.data;
+      //   })
+      //   .catch((err) => {
+      //     console.log('error', JSON.stringify(err));
+      //     if (err.response) {
+      //       const { status, data } = err.response;
+
+      //       throw { status, data };
+      //     } else {
+      //       throw { status: 500, data: { error: err.message } };
+      //     }
+      //   });
+    } else {
+      throw { status: 502, data: { error: 'Cannot process request' } };
     }
   }
 }
