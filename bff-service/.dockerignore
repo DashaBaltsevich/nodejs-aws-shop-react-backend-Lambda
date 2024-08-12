@@ -1,0 +1,29 @@
+# cdk is not needed in the Docker image for the application. It is needed to create api gateway https link
+cdk
+# dist - the docker image should be built from the source code and dependencies, not from already built app
+dist
+# dependencies are installed inside the container during the build process using package.json
+node_modules
+# webpack - the docker image should be built from the source code and dependencies, not from already built app
+webpack.config.js
+# sql queries is used for database operations, not needed by the application in the Docker container
+sql_queries
+# tests are used for development, not required in the production
+**/**/*.spec.ts
+test
+# env - only for development and testing
+.env*
+# config files and readme aren't used in the app runtime
+README.md
+.git
+.gitignore
+.eslintrc.js
+.prettierrc
+# dockerignore is used to specify which files and directories should be excluded from the Docker build context. It is not necessary to include this file in the Docker image itself
+.dockerignore
+# configuration files for AWS Elastic Beanstalk, are used for deployment configuration rather than runtime execution
+.elasticbeanstalk/*
+# contains debugging information from npm
+npm-debug.log
+# is used to define the Docker image build process, it is only used to build the image
+Dockerfile
