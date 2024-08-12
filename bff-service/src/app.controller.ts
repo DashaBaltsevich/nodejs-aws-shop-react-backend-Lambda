@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { All, Controller, Req, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Request, Response } from 'express';

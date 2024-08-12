@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import * as nodeCache from 'node-cache';
 import { Inject, Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import * as dotenv from 'dotenv';
@@ -8,7 +8,10 @@ dotenv.config();
 
 @Injectable()
 export class AppService {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  private cache: nodeCache;
+  constructor() {
+    this.cache = new nodeCache({ stdTTL: 120 });
+  }
 
   async proxyReqest(req: Request) {
     console.log('original Url', req.originalUrl);
@@ -31,17 +34,13 @@ export class AppService {
       req.originalUrl.includes('product') && req.method === 'GET';
 
     if (isProductRequest) {
-      const cacheKey = `${req.method}:${req.originalUrl}`;
-      console.log('cacheKey', cacheKey);
-      const cachedResponse = (await this.cacheManager.get(
-        cacheKey,
-      )) as AxiosResponse;
+      const cachedResponse = this.cache.get(req.originalUrl);
       console.log('cachedResponse', cachedResponse);
       if (cachedResponse) {
         console.log('Product Response from cache', cachedResponse);
         return cachedResponse;
-      }
-    } else console.log('No product cache');
+      } else console.log('No product cache');
+    }
 
     const axiosConfig = {
       headers: {
@@ -58,9 +57,7 @@ export class AppService {
       const response = await axios(axiosConfig);
       console.log('response from recipient', response);
       if (isProductRequest) {
-        const cacheKey = `${req.method}:${req.originalUrl}`;
-        console.log('cacheKey', cacheKey);
-        await this.cacheManager.set(cacheKey, response.data, 120);
+        this.cache.set(req.originalUrl, response.data, 120);
         console.log('Product cache was set');
       }
       return response.data;
